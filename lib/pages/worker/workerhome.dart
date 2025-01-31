@@ -87,6 +87,141 @@ class _WorkershomeState extends State<Workershome> {
     setState(() {});
   }
 
+  void _editJob(int index) {
+    final job = _jobBox.getAt(index);
+
+    // Open a dialog to edit the job
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Job'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    initialValue: job['name'],
+                    decoration: const InputDecoration(labelText: 'Name'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your name';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) => _name = value!,
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: job['category'],
+                    decoration: const InputDecoration(labelText: 'Category'),
+                    items: [
+                      'electrician',
+                      'plumber',
+                      'painter',
+                      'driver',
+                      'cleaner',
+                      'carpenter',
+                    ].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (value) => _category = value!,
+                  ),
+                  TextFormField(
+                    initialValue: job['place'],
+                    decoration: const InputDecoration(labelText: 'Place'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter the place';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) => _place = value!,
+                  ),
+                  TextFormField(
+                    initialValue: job['timeAvailability'],
+                    decoration:
+                        const InputDecoration(labelText: 'Time Availability'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter time availability';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) => _timeAvailability = value!,
+                  ),
+                  TextFormField(
+                    initialValue: job['pricePerHour'].toString(),
+                    decoration:
+                        const InputDecoration(labelText: 'Price Per Hour'),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter price per hour';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) => _pricePerHour = double.parse(value!),
+                  ),
+                  TextFormField(
+                    initialValue: job['phoneNumber'],
+                    decoration: const InputDecoration(labelText: 'Phone Number'),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your phone number';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) => _phoneNumber = value!,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  _formKey.currentState!.save();
+
+                  // Update job details in Hive
+                  final updatedJob = {
+                    'name': _name,
+                    'category': _category,
+                    'place': _place,
+                    'timeAvailability': _timeAvailability,
+                    'pricePerHour': _pricePerHour,
+                    'phoneNumber': _phoneNumber,
+                  };
+                  _jobBox.putAt(index, updatedJob);
+
+                  // Show SnackBar
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Job updated successfully!')),
+                  );
+
+                  Navigator.pop(context);
+                  setState(() {});
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _retrieveJob(int index) {
     // Move job back to jobs box
     final job = _historyBox.getAt(index);
@@ -138,8 +273,7 @@ class _WorkershomeState extends State<Workershome> {
         foregroundColor: Colors.white,
         leading: IconButton(
           onPressed: () {
-            _scaffoldKey.currentState
-                ?.openDrawer(); // Use the scaffold key to open the drawer
+            _scaffoldKey.currentState?.openDrawer();
           },
           icon: const Icon(Icons.menu),
         ),
@@ -151,9 +285,7 @@ class _WorkershomeState extends State<Workershome> {
               foregroundImage: AssetImage("assets/wprofile.jpg"),
             ),
           ),
-          SizedBox(
-            width: 10,
-          )
+          const SizedBox(width: 10),
         ],
       ),
       drawer: _buildDrawer(context), // Add the drawer here
@@ -307,13 +439,20 @@ class _WorkershomeState extends State<Workershome> {
                             Text('Price Per Hour: \$${job['pricePerHour']}'),
                             Text('Phone Number: ${job['phoneNumber']}'),
                             const SizedBox(height: 10),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteJob(index),
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit,
+                                      color: Colors.blue),
+                                  onPressed: () => _editJob(index),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red),
+                                  onPressed: () => _deleteJob(index),
+                                ),
+                              ],
                             ),
                           ],
                         ),
